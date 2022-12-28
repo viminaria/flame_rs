@@ -320,7 +320,7 @@ fn main() {
     println!("Results:");
     println!("Average flames: {}", (average_flames.ceil() as u32).separate_with_commas());
     if flametype == "pflame" {
-        println!("Average cost: {:.3}b", average_flames.ceil() * 0.0912)
+        println!("Average cost: {:.5}b", (average_flames.ceil() * 0.00912).separate_with_commas());
     }
     println!("");
     println!("Flames over {} flamescore: {}/{}", *keep, count.separate_with_commas(), trials.separate_with_commas());

@@ -1,9 +1,9 @@
 {
-    "allstat": 9.9,
-    "allstat_x": 20.0,
-    "substat": 0.12,
-    "att": 3.0,
-    "att_d": 10.0,
-    "att_x": 5.0,
-    "hpmp": 120.0
+    "allstat": 8,
+    "allstat_x": 20,
+    "substat": 0.1,
+    "att": 3,
+    "att_d": 10,
+    "att_x": 5,
+    "hpmp": 120
 }
