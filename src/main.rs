@@ -299,7 +299,8 @@ fn main() {
         if flame.1 > *max_flame.lock().unwrap() {
             *max_flame.lock().unwrap() = flame.1;
             flame_collection.lock().unwrap().push(flame.0);
-        } else if flame.1 >= *keep {
+        }
+        if flame.1 >= *keep {
             *count.lock().unwrap() += 1;
         }
     });
