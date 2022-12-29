@@ -6,6 +6,7 @@ use rayon::prelude::*;
 use thousands::Separable;
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use config::{Config, File, FileFormat};
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Debug)]
 struct Item<T>{
@@ -207,9 +208,9 @@ fn main() {
 
     let now = Instant::now();
 
-    let mut flame_collection = Vec::new();
-    let mut max_flame = 0.0;
-    let mut count = 0;
+    let flame_collection = Arc::new(Mutex::new(Vec::new()));
+    let max_flame = Arc::new(Mutex::new(0.0));
+    let count = Arc::new(Mutex::new(0));
 
     let flat_options: Vec<Item<u16>> = vec![
         Item {n: "100-109", v: vec![6, 12, 18, 24, 30, 36, 42]},
@@ -291,27 +292,23 @@ fn main() {
 
     let bar = ProgressBar::new(*trials);
 
-    let thing: Vec<_> = (0..*trials).into_par_iter().map(|_|{
+    (0..*trials).into_par_iter().for_each(|_|{
         bar.inc(1);
         let flame = build_flame(&*stat, option_table.clone(), flametype, noboss, allstat, allstat_x, substat, att, att_d, att_x, hpmp);
-        flame
-    }).collect();
-
-    for i in thing.clone() {
-        if i.1 > max_flame {
-            max_flame = i.1;
-            flame_collection.push(i.0);
-        } else if i.1 >= *keep {
-            count += 1;
+        flame_collection.lock().unwrap().push(flame.0);
+        if flame.1 > *max_flame.lock().unwrap() {
+            *max_flame.lock().unwrap() = flame.1.into();
+        } else if flame.1 >= *keep {
+            *count.lock().unwrap() += 1;
         }
-    }
+    });
 
     bar.finish();
 
     let mut average_flames: f32 = 0.0;
 
-    if count > 0 {
-        average_flames = *trials as f32 / count as f32;
+    if *count.lock().unwrap() > 0.into() {
+        average_flames = *trials as f32 / *count.lock().unwrap() as f32;
     }
 
     println!("Settings - Trials: {}, Flametype: {}, Stat: {}, Level: {}", trials.separate_with_commas(), flametype, stat, level);
@@ -325,8 +322,8 @@ fn main() {
         println!("Average cost: {:.5}b", (average_flames.ceil() * 0.00912).separate_with_commas());
     }
     println!("");
-    println!("Flames over {} flamescore: {}/{}", *keep, count.separate_with_commas(), trials.separate_with_commas());
-    println!("Best flame: {:?} with score: {:.2}", flame_collection.last().unwrap(), max_flame);
+    println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
+    println!("Best flame: {:?} with score: {:.2}", flame_collection.lock().unwrap().last().unwrap(), max_flame.lock().unwrap());
 
     let elapsed = now.elapsed();
     println!("Time: {:.3?}", elapsed);
