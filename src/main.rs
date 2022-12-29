@@ -206,8 +206,8 @@ fn main() {
     }
 
     let now = Instant::now();
-    let mut flame_collection = Vec::new();
 
+    let mut flame_collection = Vec::new();
     let mut max_flame = 0.0;
     let mut count = 0;
 
@@ -291,19 +291,21 @@ fn main() {
 
     let bar = ProgressBar::new(*trials);
 
-    for _ in 0..*trials {
+    let thing: Vec<_> = (0..*trials).into_par_iter().map(|_|{
         bar.inc(1);
-
         let flame = build_flame(&*stat, option_table.clone(), flametype, noboss, allstat, allstat_x, substat, att, att_d, att_x, hpmp);
+        flame
+    }).collect();
 
-        if flame.1 >= *keep {
+    for i in thing.clone() {
+        if i.1 > max_flame {
+            max_flame = i.1;
+            flame_collection.push(i.0);
+        } else if i.1 >= *keep {
             count += 1;
         }
-        if flame.1 > max_flame {
-            max_flame = flame.1;
-            flame_collection.push(flame.0);
-        }
     }
+
     bar.finish();
 
     let mut average_flames: f32 = 0.0;
