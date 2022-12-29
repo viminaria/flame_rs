@@ -6,7 +6,7 @@ use rayon::prelude::*;
 use thousands::Separable;
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use config::{Config, File, FileFormat};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 #[derive(Clone, Debug)]
 struct Item<T>{
@@ -208,9 +208,9 @@ fn main() {
 
     let now = Instant::now();
 
-    let flame_collection = Arc::new(Mutex::new(Vec::new()));
-    let max_flame = Arc::new(Mutex::new(0.0));
-    let count = Arc::new(Mutex::new(0));
+    let flame_collection = Mutex::new(Vec::new());
+    let max_flame = Mutex::new(0.0);
+    let count = Mutex::new(0);
 
     let flat_options: Vec<Item<u16>> = vec![
         Item {n: "100-109", v: vec![6, 12, 18, 24, 30, 36, 42]},
@@ -295,9 +295,10 @@ fn main() {
     (0..*trials).into_par_iter().for_each(|_|{
         bar.inc(1);
         let flame = build_flame(&*stat, option_table.clone(), flametype, noboss, allstat, allstat_x, substat, att, att_d, att_x, hpmp);
-        flame_collection.lock().unwrap().push(flame.0);
+
         if flame.1 > *max_flame.lock().unwrap() {
-            *max_flame.lock().unwrap() = flame.1.into();
+            *max_flame.lock().unwrap() = flame.1;
+            flame_collection.lock().unwrap().push(flame.0);
         } else if flame.1 >= *keep {
             *count.lock().unwrap() += 1;
         }
@@ -307,7 +308,7 @@ fn main() {
 
     let mut average_flames: f32 = 0.0;
 
-    if *count.lock().unwrap() > 0.into() {
+    if *count.lock().unwrap() > 0 {
         average_flames = *trials as f32 / *count.lock().unwrap() as f32;
     }
 
