@@ -81,7 +81,7 @@ fn build_flame(stat: &str, option_table: Vec<Item<Item<u16>>> , flamestat: &str,
                 flame[3].1 += *choice;
             } else if option.n == "int" {
                 flame[2].1 += *choice;
-            } else if option.n == "intluk" {
+            } else if option.n == "lukint" {
                 flame[2].1 += *choice;
                 flame[3].1 += *choice;
             } else if option.n == "luk" {
