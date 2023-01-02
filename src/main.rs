@@ -194,6 +194,12 @@ fn main() {
             .help("Simulate non-boss flames")
             .action(ArgAction::SetTrue),
     )
+    .arg(
+        Arg::new("top5")
+            .long("top5")
+            .help("Show top 5 flames instead of just the best one")
+            .action(ArgAction::SetTrue),
+    )
     .get_matches();
 
     let trials = matches.get_one::<u64>("trials").unwrap();
@@ -202,8 +208,12 @@ fn main() {
     let level = matches.get_one::<String>("level").unwrap();
     let flametype = matches.get_one::<String>("flametype").unwrap();
     let mut noboss = false;
+    let mut top5 = false;
     if matches.get_flag("noboss") {
         noboss = matches.get_flag("noboss");
+    }
+    if matches.get_flag("top5") {
+        top5 = matches.get_flag("top5");
     }
 
     let now = Instant::now();
@@ -298,7 +308,7 @@ fn main() {
 
         if flame.1 > *max_flame.lock().unwrap() {
             *max_flame.lock().unwrap() = flame.1;
-            flame_collection.lock().unwrap().push(flame.0);
+            flame_collection.lock().unwrap().push(flame.clone());
         }
         if flame.1 >= *keep {
             *count.lock().unwrap() += 1;
@@ -325,8 +335,21 @@ fn main() {
     }
     println!("");
     println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
-    println!("Best flame: {:?} with score: {:.2}", flame_collection.lock().unwrap().last().unwrap(), max_flame.lock().unwrap());
+    if top5 {
+        let v = flame_collection.lock().unwrap().clone();
+        let last5 = v.as_slice()[v.len()-5..].to_vec();
+        let mut number = 1;
 
+        println!("Top 5 flames:");
+
+        for flame in last5.iter().rev() {
+            println!("#{}: {:?} with score: {:.2}", number, flame.0, flame.1);
+            number += 1;
+        }
+
+    } else if !top5 {
+        println!("Best flame: {:?} with score: {:.2}", flame_collection.lock().unwrap().last().unwrap().0, max_flame.lock().unwrap());
+    }
     let elapsed = now.elapsed();
     println!("Time: {:.3?}", elapsed);
 }

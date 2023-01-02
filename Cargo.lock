@@ -232,7 +232,7 @@ dependencies = [
 
 [[package]]
 name = "flame_rs"
-version = "1.1.2"
+version = "1.1.3"
 dependencies = [
  "clap",
  "config",
