@@ -7,6 +7,7 @@ use thousands::Separable;
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use config::{Config, File, FileFormat};
 use std::sync::Mutex;
+use std::cmp::Ordering;
 
 #[derive(Clone, Debug)]
 struct Item<T>{
@@ -306,12 +307,20 @@ fn main() {
         bar.inc(1);
         let flame = build_flame(&*stat, option_table.clone(), flametype, noboss, allstat, allstat_x, substat, att, att_d, att_x, hpmp);
 
-        if flame.1 > *max_flame.lock().unwrap() {
-            *max_flame.lock().unwrap() = flame.1;
-            flame_collection.lock().unwrap().push(flame.clone());
-        }
         if flame.1 >= *keep {
             *count.lock().unwrap() += 1;
+        }
+
+        if top5 {
+            if flame.1 > *max_flame.lock().unwrap() {
+                flame_collection.lock().unwrap().push(flame.clone());
+            }
+
+        } else {
+            if flame.1 > *max_flame.lock().unwrap() {
+                *max_flame.lock().unwrap() = flame.1;
+                flame_collection.lock().unwrap().push(flame.clone());
+            }
         }
     });
 
@@ -336,7 +345,16 @@ fn main() {
     println!("");
     println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
     if top5 {
-        let v = flame_collection.lock().unwrap().clone();
+        let mut v = flame_collection.lock().unwrap().clone();
+        v.sort_by(|a, b| {
+            if a.1 < b.1 {
+                Ordering::Less
+            } else if a.1 == b.1 {
+                Ordering::Equal
+            } else {
+                Ordering::Greater
+            }
+        });
         let last5 = v.as_slice()[v.len()-5..].to_vec();
         let mut number = 1;
 
