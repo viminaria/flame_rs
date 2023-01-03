@@ -219,7 +219,7 @@ fn main() {
 
     let now = Instant::now();
 
-    let flame_collection = Mutex::new(Vec::new());
+    let flame_collection: Mutex<Vec<(Vec<(&str, u16)>, f32)>> = Mutex::new(Vec::new());
     let max_flame = Mutex::new(0.0);
     let count = Mutex::new(0);
 
@@ -312,8 +312,25 @@ fn main() {
         }
 
         if top5 {
-            if flame.1 > *max_flame.lock().unwrap() {
+            if flame_collection.lock().unwrap().len() < 4 {
+
                 flame_collection.lock().unwrap().push(flame.clone());
+
+            } else if flame.1 > flame_collection.lock().unwrap()[0].1 {
+                flame_collection.lock().unwrap().push(flame.clone());
+                flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
+                    if a.1 < b.1 {
+                        Ordering::Greater
+                    } else if a.1 == b.1 {
+                        Ordering::Equal
+                    } else {
+                        Ordering::Less
+                    }
+                });
+    
+                if flame_collection.lock().unwrap().len() > 5 {
+                    flame_collection.lock().unwrap().truncate(5);
+                } 
             }
 
         } else {
@@ -344,23 +361,14 @@ fn main() {
     }
     println!("");
     println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
+    println!("");
     if top5 {
-        let mut v = flame_collection.lock().unwrap().clone();
-        v.sort_by(|a, b| {
-            if a.1 < b.1 {
-                Ordering::Less
-            } else if a.1 == b.1 {
-                Ordering::Equal
-            } else {
-                Ordering::Greater
-            }
-        });
-        let last5 = v.as_slice()[v.len()-5..].to_vec();
         let mut number = 1;
+        let flamer = flame_collection.lock().unwrap().clone();
 
         println!("Top 5 flames:");
 
-        for flame in last5.iter().rev() {
+        for flame in flamer.iter() {
             println!("#{}: {:?} with score: {:.2}", number, flame.0, flame.1);
             number += 1;
         }
