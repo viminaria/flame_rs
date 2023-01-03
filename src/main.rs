@@ -312,11 +312,7 @@ fn main() {
         }
 
         if top5 {
-            if flame_collection.lock().unwrap().len() < 4 {
-
-                flame_collection.lock().unwrap().push(flame.clone());
-
-            } else if flame.1 > flame_collection.lock().unwrap()[0].1 {
+            if flame_collection.lock().unwrap().len() < 5 {
                 flame_collection.lock().unwrap().push(flame.clone());
                 flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
                     if a.1 < b.1 {
@@ -327,10 +323,18 @@ fn main() {
                         Ordering::Less
                     }
                 });
-    
-                if flame_collection.lock().unwrap().len() > 5 {
-                    flame_collection.lock().unwrap().truncate(5);
-                } 
+            } else if flame.1 > flame_collection.lock().unwrap()[4].1 {
+                flame_collection.lock().unwrap().push(flame.clone());
+                flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
+                    if a.1 < b.1 {
+                        Ordering::Greater
+                    } else if a.1 == b.1 {
+                        Ordering::Equal
+                    } else {
+                        Ordering::Less
+                    }
+                });
+                flame_collection.lock().unwrap().truncate(5);
             }
 
         } else {
