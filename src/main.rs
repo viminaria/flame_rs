@@ -189,16 +189,17 @@ fn main() {
         .default_value("pflame"),
     )
     .arg(
+        arg!(
+            --top <NUMBER> "Displays the top scoring flames (max 1000)"
+        )
+        .value_parser(value_parser!(usize))
+        .required(false)
+    )
+    .arg(
         Arg::new("noboss")
             .short('n')
             .long("noboss")
             .help("Simulate non-boss flames")
-            .action(ArgAction::SetTrue),
-    )
-    .arg(
-        Arg::new("top5")
-            .long("top5")
-            .help("Show top 5 flames instead of just the best one")
             .action(ArgAction::SetTrue),
     )
     .get_matches();
@@ -208,19 +209,26 @@ fn main() {
     let keep = matches.get_one::<f32>("keep").unwrap();
     let level = matches.get_one::<String>("level").unwrap();
     let flametype = matches.get_one::<String>("flametype").unwrap();
+
+    let mut top: usize = 1;
+    if let Some(tops) = matches.get_one::<usize>("top") {
+        if *tops > 1000 {
+            top = 1000;
+        } else if *tops > *trials as usize {
+            top = *trials as usize;
+        } else {
+            top = *tops;
+        }
+    }
+
     let mut noboss = false;
-    let mut top5 = false;
     if matches.get_flag("noboss") {
         noboss = matches.get_flag("noboss");
-    }
-    if matches.get_flag("top5") {
-        top5 = matches.get_flag("top5");
     }
 
     let now = Instant::now();
 
     let flame_collection: Mutex<Vec<(Vec<(&str, u16)>, f32)>> = Mutex::new(Vec::new());
-    let max_flame = Mutex::new(0.0);
     let count = Mutex::new(0);
 
     let flat_options: Vec<Item<u16>> = vec![
@@ -311,37 +319,29 @@ fn main() {
             *count.lock().unwrap() += 1;
         }
 
-        if top5 {
-            if flame_collection.lock().unwrap().len() < 5 {
-                flame_collection.lock().unwrap().push(flame.clone());
-                flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
-                    if a.1 < b.1 {
-                        Ordering::Greater
-                    } else if a.1 == b.1 {
-                        Ordering::Equal
-                    } else {
-                        Ordering::Less
-                    }
-                });
-            } else if flame.1 > flame_collection.lock().unwrap()[4].1 {
-                flame_collection.lock().unwrap().push(flame.clone());
-                flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
-                    if a.1 < b.1 {
-                        Ordering::Greater
-                    } else if a.1 == b.1 {
-                        Ordering::Equal
-                    } else {
-                        Ordering::Less
-                    }
-                });
-                flame_collection.lock().unwrap().truncate(5);
-            }
-
-        } else {
-            if flame.1 > *max_flame.lock().unwrap() {
-                *max_flame.lock().unwrap() = flame.1;
-                flame_collection.lock().unwrap().push(flame.clone());
-            }
+        if flame_collection.lock().unwrap().len() < top {
+            flame_collection.lock().unwrap().push(flame.clone());
+            flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
+                if a.1 < b.1 {
+                    Ordering::Greater
+                } else if a.1 == b.1 {
+                    Ordering::Equal
+                } else {
+                    Ordering::Less
+                }
+            });
+        } else if flame.1 > flame_collection.lock().unwrap()[top - 1].1 {
+            flame_collection.lock().unwrap().push(flame.clone());
+            flame_collection.lock().unwrap().sort_by(|a: &(Vec<(&str, u16)>, f32), b: &(Vec<(&str, u16)>, f32)| { // reverse sort collection by score
+                if a.1 < b.1 {
+                    Ordering::Greater
+                } else if a.1 == b.1 {
+                    Ordering::Equal
+                } else {
+                    Ordering::Less
+                }
+            });
+            flame_collection.lock().unwrap().truncate(top);
         }
     });
 
@@ -366,19 +366,17 @@ fn main() {
     println!("");
     println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
     println!("");
-    if top5 {
+    if top > 1 {
+        println!("Top {} flames:", top);
         let mut number = 1;
-        let flamer = flame_collection.lock().unwrap().clone();
-
-        println!("Top 5 flames:");
-
-        for flame in flamer.iter() {
+        for flame in flame_collection.lock().unwrap().clone().iter() {
             println!("#{}: {:?} with score: {:.2}", number, flame.0, flame.1);
             number += 1;
         }
-
-    } else if !top5 {
-        println!("Best flame: {:?} with score: {:.2}", flame_collection.lock().unwrap().last().unwrap().0, max_flame.lock().unwrap());
+    } else {
+        for flame in flame_collection.lock().unwrap().clone().iter() {
+            println!("Best flame: {:?} with score: {:.2}", flame.0, flame.1);
+        }
     }
     let elapsed = now.elapsed();
     println!("Time: {:.3?}", elapsed);
