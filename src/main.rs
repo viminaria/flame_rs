@@ -18,6 +18,7 @@ struct Item<T>{
 fn build_flame(stat: &str, option_table: Vec<Item<Item<u16>>> , flamestat: &str, noboss: bool, allstat: f32, allstat_x: f32, substat: f32, att: f32, att_d: f32, att_x: f32, hpmp: f32) -> (Vec<(&'static str, u16)>, f32) {
 
     let tier_weights: Vec<Item<f32>> = vec![
+        Item {n: "totem", v: vec![0.0, 0.0, 0.575, 0.3, 0.065, 0.035, 0.025, 0.0, 0.0]},
         Item {n: "drop", v: vec![0.0, 0.0, 0.25, 0.3, 0.3, 0.14, 0.01, 0.0, 0.0]},
         Item {n: "pflame", v: vec![0.0, 0.0, 0.2, 0.3, 0.36, 0.14, 0.0, 0.0, 0.0]},
         Item {n: "eflame", v: vec![0.0, 0.0, 0.0, 0.29, 0.45, 0.25, 0.01, 0.0, 0.0]},
@@ -183,7 +184,7 @@ fn main() {
     )
     .arg(
         arg!(
-            -f --flametype <FLAMETYPE> "Type of flame used [options: drop, pflame, eflame, regcraft, mastercraft, meistercraft, masterfuse, meisterfuse]"
+            -f --flametype <FLAMETYPE> "Type of flame used [options: totem, drop, pflame, eflame, regcraft, mastercraft, meistercraft, masterfuse, meisterfuse]"
         )
         .value_parser(value_parser!(String))
         .default_value("pflame"),
@@ -193,6 +194,13 @@ fn main() {
             --top <NUMBER> "Displays the top scoring flames (max 1000)"
         )
         .value_parser(value_parser!(usize))
+        .required(false)
+    )
+    .arg(
+        arg!(
+            -c --chance <NUMBER> "Calculates the odds of getting target flame within the specified amount of flames"
+        )
+        .value_parser(value_parser!(i32))
         .required(false)
     )
     .arg(
@@ -219,6 +227,11 @@ fn main() {
         } else {
             top = *tops;
         }
+    }
+
+    let mut chance: i32 = 0;
+    if let Some(budget) = matches.get_one::<i32>("chance") {
+        chance = *budget;
     }
 
     let mut noboss = false;
@@ -359,12 +372,18 @@ fn main() {
     }
     println!("");
     println!("Results:");
+    let percent = count.lock().unwrap().clone() as f32 / *trials as f32 * 100.0;
+    println!("Flames over {} flamescore: {}/{} -- {:.3}%", *keep, count.lock().unwrap().clone().separate_with_commas(), trials.separate_with_commas(), percent);
+    println!("");
     println!("Average flames: {}", (average_flames.ceil() as u32).separate_with_commas());
     if flametype == "pflame" {
         println!("Average cost: {:.5}b", (average_flames.ceil() * 0.00912).separate_with_commas());
     }
     println!("");
-    println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().separate_with_commas(), trials.separate_with_commas());
+    if chance > 0 {
+        let odds: f32 = 1.0 - ((1.0 - *count.lock().unwrap() as f32 / *trials as f32).powi(chance)); 
+        println!("Chance of getting within {} flames: {:.3}%", &chance, odds * 100.0);
+    }
     println!("");
     if top > 1 {
         println!("Top {} flames:", top);
