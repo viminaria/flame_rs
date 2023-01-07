@@ -18,7 +18,7 @@ struct Item<T>{
 fn build_flame(stat: &str, option_table: Vec<Item<Item<u16>>> , flamestat: &str, noboss: bool, allstat: f32, allstat_x: f32, substat: f32, att: f32, att_d: f32, att_x: f32, hpmp: f32) -> (Vec<(&'static str, u16)>, f32) {
 
     let tier_weights: Vec<Item<f32>> = vec![
-        Item {n: "totem", v: vec![0.0, 0.0, 0.575, 0.3, 0.065, 0.035, 0.025, 0.0, 0.0]},
+        Item {n: "totem", v: vec![0.0, 0.0, 0.558, 0.325, 0.065, 0.032, 0.02, 0.0, 0.0]},
         Item {n: "drop", v: vec![0.0, 0.0, 0.25, 0.3, 0.3, 0.14, 0.01, 0.0, 0.0]},
         Item {n: "pflame", v: vec![0.0, 0.0, 0.2, 0.3, 0.36, 0.14, 0.0, 0.0, 0.0]},
         Item {n: "eflame", v: vec![0.0, 0.0, 0.0, 0.29, 0.45, 0.25, 0.01, 0.0, 0.0]},
