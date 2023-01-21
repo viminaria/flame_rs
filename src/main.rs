@@ -390,9 +390,9 @@ fn main() {
     println!("Average flames: {}", (average_flames.ceil() as u32).separate_with_commas());
     if flametype == "pflame" {
         if average_flames.ceil() * 0.00912 >= 1000.0 {
-            println!("Average cost: {:.6}T", (average_flames.ceil() * 0.00000912).separate_with_commas());
+            println!("Average cost: {:.5}T", (average_flames.ceil() * 0.00000912).separate_with_commas());
         } else {
-            println!("Average cost: {:.3}b", (average_flames.ceil() * 0.00912).separate_with_commas());
+            println!("Average cost: {:.5}b", (average_flames.ceil() * 0.00912).separate_with_commas());
         }
 
     }
