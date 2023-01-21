@@ -1,13 +1,11 @@
 use rand::seq::SliceRandom;
 use random_choice::random_choice;
-use std::time::Instant;
+use std::{time::Instant, env, sync::Mutex, cmp::Ordering, io, path::PathBuf};
 use indicatif::ProgressBar;
 use rayon::prelude::*;
 use thousands::Separable;
 use clap::{arg, command, value_parser, Arg, ArgAction};
 use config::{Config, File, FileFormat};
-use std::sync::Mutex;
-use std::cmp::Ordering;
 
 #[derive(Clone, Debug)]
 struct Item<T>{
@@ -126,9 +124,24 @@ fn build_flame(stat: &str, option_table: Vec<Item<Item<u16>>> , flamestat: &str,
     (flame, score) // add score return value
 }
 
+fn inner_main() -> io::Result<PathBuf> {
+    let mut exe = env::current_exe()?;
+    exe.set_file_name("flame_values.json");
+    Ok(exe)
+}
+
 fn main() {
+    let mut dir = String::new();
+
+    match inner_main() {
+        Ok(path) => dir = path.as_path().display().to_string(),
+        Err(e) => {
+            eprintln!("Error determining executable path: {}", e);
+        }
+    }
+
     let builder = Config::builder()
-    .add_source(File::new("flame_values.json", FileFormat::Json));
+    .add_source(File::new(&dir, FileFormat::Json));
 
     let mut allstat = 8.0;
     let mut allstat_x = 20.0; // xenon
@@ -372,12 +385,16 @@ fn main() {
     }
     println!("");
     println!("Results:");
-    let percent = count.lock().unwrap().clone() as f32 / *trials as f32 * 100.0;
-    println!("Flames over {} flamescore: {}/{} -- {:.3}%", *keep, count.lock().unwrap().clone().separate_with_commas(), trials.separate_with_commas(), percent);
+    println!("Flames over {} flamescore: {}/{}", *keep, count.lock().unwrap().clone().separate_with_commas(), trials.separate_with_commas());
     println!("");
     println!("Average flames: {}", (average_flames.ceil() as u32).separate_with_commas());
     if flametype == "pflame" {
-        println!("Average cost: {:.5}b", (average_flames.ceil() * 0.00912).separate_with_commas());
+        if average_flames.ceil() * 0.00912 >= 1000.0 {
+            println!("Average cost: {:.6}T", (average_flames.ceil() * 0.00000912).separate_with_commas());
+        } else {
+            println!("Average cost: {:.3}b", (average_flames.ceil() * 0.00912).separate_with_commas());
+        }
+
     }
     println!("");
     if chance > 0 {
