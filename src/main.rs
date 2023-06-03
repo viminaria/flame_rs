@@ -1,4 +1,5 @@
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, SeedableRng};
+use rand_xorshift::XorShiftRng;
 use random_choice::random_choice;
 use std::{time::Instant, env, sync::Mutex, cmp::Ordering, io, path::PathBuf};
 use indicatif::ProgressBar;
@@ -57,7 +58,6 @@ fn build_flame(stat: &str, option_table: Vec<Item<Item<u16>>> , flamestat: &str,
     }
 
     // build flame
-    
     for option in option_table.choose_multiple(&mut rand::thread_rng(), lines).into_iter() { // chooses 4 random flame_template from option table
         for choice in random_choice().random_choice_f32(&option.v[0].v, weights, 1){ // chooses tier by weight
             // add chosen line to flame
