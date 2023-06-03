@@ -1,5 +1,4 @@
-use rand::{seq::SliceRandom, SeedableRng};
-use rand_xorshift::XorShiftRng;
+use rand::seq::SliceRandom;
 use random_choice::random_choice;
 use std::{time::Instant, env, sync::Mutex, cmp::Ordering, io, path::PathBuf};
 use indicatif::ProgressBar;
