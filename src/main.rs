@@ -25,6 +25,10 @@ fn build_flame(
 ) -> (Vec<(&'static str, u16)>, f32) {
     let tier_weights: Vec<Item<f32>> = vec![
         Item {
+            n: "abyss",
+            v: vec![0.0, 0.0, 0.0, 0.0, 0.63, 0.34, 0.03, 0.0, 0.0],
+        },
+        Item {
             n: "totem",
             v: vec![0.0, 0.0, 0.558, 0.325, 0.065, 0.032, 0.02, 0.0, 0.0],
         },
@@ -267,7 +271,7 @@ fn main() {
     )
     .arg(
         arg!(
-            -f --flametype <FLAMETYPE> "Type of flame used [options: totem, drop, pflame, eflame, regcraft, mastercraft, meistercraft, masterfuse, meisterfuse]"
+            -f --flametype <FLAMETYPE> "Type of flame used [options: abyss, totem, drop, pflame, eflame, regcraft, mastercraft, meistercraft, masterfuse, meisterfuse]"
         )
         .value_parser(value_parser!(String))
         .default_value("pflame"),
@@ -283,7 +287,7 @@ fn main() {
         arg!(
             -c --chance <NUMBER> "Calculates the odds of getting target flame within the specified amount of flames"
         )
-        .value_parser(value_parser!(i32))
+        .value_parser(value_parser!(u64))
         .required(false)
     )
     .arg(
